@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/websocket"
-	amqp "github.com/rabbitmq/amqp091-go"
+	"github.com/rabbitmq/amqp091-go"
 	"github.com/shawkyelshalawy/TollWayTruck/rabbitmq"
 	"github.com/shawkyelshalawy/TollWayTruck/types"
 )
@@ -31,6 +32,9 @@ func main() {
 	}
 	defer client.Close()
 	if err := client.CreateQueue("tollway-created", true, false); err != nil {
+		panic(err)
+	}
+	if err := client.CreateBinding("tollway-created", "tollway.*", "tollway_events"); err != nil {
 		panic(err)
 	}
 	recv := NewDataReceiver(client)
@@ -59,7 +63,8 @@ func (dr *DataReceiver) handleWS(w http.ResponseWriter, r *http.Request) {
 
 func (dr *DataReceiver) wsReceiveLoop() {
 	fmt.Println("New OBU connected client connected !")
-
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 	for {
 		var data types.OBUData
 		if err := dr.conn.ReadJSON(&data); err != nil {
@@ -72,14 +77,16 @@ func (dr *DataReceiver) wsReceiveLoop() {
 			log.Println("Failed to marshal OBU data:", err)
 			continue
 		}
-		pub := amqp.Publishing{
-			ContentType: "application/json",
-			Body:        dataBytes,
+		pub := amqp091.Publishing{
+			ContentType:  "application/json",
+			DeliveryMode: amqp091.Persistent,
+			Body:         dataBytes,
 		}
-		fmt.Println("received message")
-		if err := dr.rabbitClient.ProduceData(context.Background(), "tollway_events", "tollway.egy", pub); err != nil {
+
+		if err := dr.rabbitClient.ProduceData(ctx, "tollway_events", "tollway.egy", pub); err != nil {
 			log.Println("Failed to send message:", err)
 			continue
 		}
+		fmt.Println("received message")
 	}
 }
