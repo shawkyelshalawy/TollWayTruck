@@ -2,9 +2,11 @@ module github.com/shawkyelshalawy/TollWayTruck
 
 go 1.19
 
+require github.com/sirupsen/logrus v1.9.3
+
 require (
-	github.com/confluentinc/confluent-kafka-go/v2 v2.3.0
-	github.com/sirupsen/logrus v1.9.3
+	github.com/golang/protobuf v1.5.3 // indirect
+	google.golang.org/protobuf v1.26.0 // indirect
 )
 
 require (

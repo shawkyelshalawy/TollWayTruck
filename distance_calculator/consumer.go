@@ -50,6 +50,7 @@ func NewRabbitConsumer(svc CalculatorServicer, aggClient *client.Client) (Rabbit
 func (rc *RabbitConsumer) Consume(queue, consumer string, autoAck bool) (<-chan amqp.Delivery, error) {
 	return rc.ch.Consume(queue, consumer, autoAck, false, false, false, nil)
 }
+
 func (rc *RabbitConsumer) ReadMessageLoop() {
 	messageBus, err := rc.Consume("tollway-created", "distance-calculator", false)
 	if err != nil {
@@ -86,11 +87,6 @@ func (rc *RabbitConsumer) ReadMessageLoop() {
 				}
 				logrus.Infof("Calculated distance: %.2f", distance)
 				time.Sleep(10 * time.Second)
-				if err := msg.Ack(false); err != nil {
-					log.Println("Ack message failed")
-					return err
-				}
-				log.Printf("Acked message: %s\n", message.MessageId)
 				return nil
 			})
 		}
@@ -99,6 +95,39 @@ func (rc *RabbitConsumer) ReadMessageLoop() {
 	<-blocking
 }
 
+// func (rc *RabbitConsumer) ReadMessageLoop() {
+// 	for rc.isRunning {
+// 		messageBus, err := rc.Consume("tollway-created", "distance-calculator", false)
+// 		if err != nil {
+// 			panic(err)
+// 		}
+// 		var data types.OBUData
+// 		//	for message := range messageBus {
+// 		msg := <-messageBus
+// 		if err := json.Unmarshal(msg.Body, &data); err != nil {
+// 			logrus.Errorf("Failed to unmarshal message: %v", err)
+// 			continue
+// 		}
+// 		distance, err := rc.calcService.CalculateDistance(data)
+// 		if err != nil {
+// 			logrus.Errorf("Failed to calculate distance: %v", err)
+// 			continue
+// 		}
+// 		logrus.Infof("Calculated distance: %.2f", distance)
+// 		req := types.Distance{
+// 			OBUID: data.OBUID,
+// 			Value: distance,
+// 			Unix:  time.Now().UnixNano(),
+// 		}
+// 		if err := rc.aggClient.Aggregate(req); err != nil {
+// 			logrus.Errorf("Failed to aggregate distance, error: %v", err)
+// 			continue
+// 		}
+
+//			//	}
+//		}
+//		log.Println("consuming messages started, use CTRL+C to stop it")
+//	}
 func (rc *RabbitConsumer) Start() {
 	logrus.Info("Starting RabbitMQ consumer")
 	rc.ReadMessageLoop()

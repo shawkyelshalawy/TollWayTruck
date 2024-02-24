@@ -1,7 +1,12 @@
 package main
 
-import "github.com/shawkyelshalawy/TollWayTruck/types"
+import (
+	"fmt"
 
+	"github.com/shawkyelshalawy/TollWayTruck/types"
+)
+
+// todo : try to use redis here
 type MemoryStore struct {
 	data map[int]float64
 }
@@ -11,7 +16,16 @@ func NewMemoryStore() *MemoryStore {
 		data: make(map[int]float64),
 	}
 }
+
 func (m *MemoryStore) Insert(d types.Distance) error {
 	m.data[d.OBUID] += d.Value
 	return nil
+}
+
+func (m *MemoryStore) Get(id int) (float64, error) {
+	dist, ok := m.data[id]
+	if !ok {
+		return 0.0, fmt.Errorf("could not find distance for obu id %d", id)
+	}
+	return dist, nil
 }
