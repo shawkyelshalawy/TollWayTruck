@@ -77,10 +77,10 @@ func (rc *RabbitConsumer) ReadMessageLoop() {
 					logrus.Errorf("Failed to calculate distance")
 					return err
 				}
-				req := types.Distance{
-					OBUID: data.OBUID,
+				req := &types.AggregateRequest{
 					Value: distance,
 					Unix:  time.Now().UnixNano(),
+					ObuID: int32(data.OBUID),
 				}
 				if err := rc.aggClient.Aggregate(context.Background(), req); err != nil {
 					logrus.Errorf("Failed to aggregate distance, error: %v", err)
