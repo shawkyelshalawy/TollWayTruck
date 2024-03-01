@@ -2,13 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
-	"log"
 	"net/http"
-	"os"
 	"strconv"
 
-	"github.com/joho/godotenv"
 	"github.com/shawkyelshalawy/TollWayTruck/types"
 )
 
@@ -18,36 +16,15 @@ type APIError struct {
 }
 
 func main() {
-	if err := godotenv.Load(); err != nil {
-		log.Fatal(err)
-	}
+	listenAddr := flag.String("listen-addr", ":8080", "server listen address")
+	flag.Parse()
 	var (
 		store = NewMemoryStore()
 		svc   = NewInvoiceAggregator(store)
-		//grpcListenAddr = os.Getenv("AGG_GRPC_ENDPOINT")
-		httpListenAddr = os.Getenv("AGG_HTTP_ENDPOINT")
 	)
 	svc = NewLogMiddleware(svc)
-	makeHttpTransport(httpListenAddr, svc)
+	makeHttpTransport(*listenAddr, svc)
 }
-
-// func makeGRPCTransport(listenAddr string, svc Aggregator) error {
-// 	fmt.Println("GRPC transport running on port ", listenAddr)
-// 	// Make a TCP listener
-// 	ln, err := net.Listen("tcp", listenAddr)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	defer func() {
-// 		fmt.Println("stopping GRPC transport")
-// 		ln.Close()
-// 	}()
-// 	// Make a new GRPC native server with (options)
-// 	server := grpc.NewServer([]grpc.ServerOption{}...)
-// 	// Register GRPC server implementation to the GRPC package.
-// 	types.RegisterAggregatorServer(server, NewAggregatorGRPCServer(svc))
-// 	return server.Serve(ln)
-// }
 
 func makeHttpTransport(listenAddr string, svc Aggregator) {
 	fmt.Println("Starting HTTP transport on", listenAddr)
@@ -88,7 +65,6 @@ func handleAggregate(svc Aggregator) http.HandlerFunc {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
-		w.WriteHeader(http.StatusCreated)
 	}
 }
 

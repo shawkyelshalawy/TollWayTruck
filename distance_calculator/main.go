@@ -13,7 +13,7 @@ func main() {
 	)
 	svc = NewCalculatorService()
 	svc = NewLogMiddleware(svc)
-	httpClient := client.NewHTTPClient(aggregatorEndpoint)
+	httpClient := client.NewClient(aggregatorEndpoint)
 	rcconsumer, err := NewRabbitConsumer(svc, httpClient)
 	if err != nil {
 		panic(err)
