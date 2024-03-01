@@ -20,13 +20,13 @@ type RabbitConsumer struct {
 	// channels used to process/send messages
 	ch          *amqp.Channel
 	calcService CalculatorServicer
-	aggClient   *client.Client
+	aggClient   client.Client
 }
 
 func ConnectRabbitMQ(username, password, host, vhost string) (*amqp.Connection, error) {
 	return amqp.Dial(fmt.Sprintf("amqp://%s:%s@%s/%s", username, password, host, vhost))
 }
-func NewRabbitConsumer(svc CalculatorServicer, aggClient *client.Client) (RabbitConsumer, error) {
+func NewRabbitConsumer(svc CalculatorServicer, aggClient client.Client) (RabbitConsumer, error) {
 	conn, err := ConnectRabbitMQ("shawky", "secret", "localhost:5672", "tollway")
 	if err != nil {
 		panic(err)
@@ -77,12 +77,12 @@ func (rc *RabbitConsumer) ReadMessageLoop() {
 					logrus.Errorf("Failed to calculate distance")
 					return err
 				}
-				req := types.Distance{
-					OBUID: data.OBUID,
+				req := &types.AggregateRequest{
+					ObuID: int32(data.OBUID),
 					Value: distance,
 					Unix:  time.Now().UnixNano(),
 				}
-				if err := rc.aggClient.Aggregate(req); err != nil {
+				if err := rc.aggClient.Aggregate(context.Background(), req); err != nil {
 					logrus.Errorf("Failed to aggregate distance, error: %v", err)
 				}
 				logrus.Infof("Calculated distance: %.2f", distance)

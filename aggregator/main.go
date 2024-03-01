@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"net"
 	"net/http"
 	"strconv"
 
 	"github.com/shawkyelshalawy/TollWayTruck/types"
+	"google.golang.org/grpc"
 )
 
 type APIError struct {
@@ -24,6 +26,24 @@ func main() {
 	)
 	svc = NewLogMiddleware(svc)
 	makeHttpTransport(*listenAddr, svc)
+}
+
+func makeGRPCTransport(listenAddr string, svc Aggregator) error {
+	fmt.Println("GRPC transport running on port ", listenAddr)
+	// Make a TCP listener
+	ln, err := net.Listen("tcp", listenAddr)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		fmt.Println("stopping GRPC transport")
+		ln.Close()
+	}()
+	// Make a new GRPC native server with (options)
+	server := grpc.NewServer([]grpc.ServerOption{}...)
+	// Register GRPC server implementation to the GRPC package.
+	types.RegisterAggregatorServer(server, NewAggregatorGRPCServer(svc))
+	return server.Serve(ln)
 }
 
 func makeHttpTransport(listenAddr string, svc Aggregator) {

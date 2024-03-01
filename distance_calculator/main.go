@@ -8,12 +8,17 @@ const (
 
 func main() {
 	var (
-		svc CalculatorServicer
 		err error
+		svc CalculatorServicer
 	)
 	svc = NewCalculatorService()
 	svc = NewLogMiddleware(svc)
-	httpClient := client.NewClient(aggregatorEndpoint)
+
+	httpClient := client.NewHTTPClient(aggregatorEndpoint)
+	// grpcClient, err := client.NewGRPCClient(aggregatorEndpoint)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 	rcconsumer, err := NewRabbitConsumer(svc, httpClient)
 	if err != nil {
 		panic(err)
