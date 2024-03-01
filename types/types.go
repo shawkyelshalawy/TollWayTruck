@@ -17,3 +17,13 @@ type Invoice struct {
 	TotalDistance float64 `json:"totalDistance"`
 	TotalAmount   float64 `json:"totalAmount"`
 }
+
+type GetInvoiceRequest struct {
+	ObuID int32 `json:"obuID"`
+}
+
+type AggregateRequest struct {
+	ObuID int32   `json:"obuID"`
+	Value float64 `json:"value"`
+	Unix  int64   `json:"unixTime"`
+}

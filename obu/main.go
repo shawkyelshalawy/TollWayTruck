@@ -17,7 +17,7 @@ type OBU struct {
 	Long  float64 `json:"long"`
 }
 
-var sendInterval = time.Second * 5
+var sendInterval = time.Second * 45
 
 func genLatLong() (float64, float64) {
 	return genCoordinates(), genCoordinates()
