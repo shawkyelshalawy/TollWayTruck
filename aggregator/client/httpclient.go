@@ -40,7 +40,7 @@ func (c *HTTPClient) GetInvoice(ctx context.Context, id int) (*types.Invoice, er
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("the service responded with non 200 status code %d", resp.StatusCode)
+		return nil, fmt.Errorf("the invoice responded with non 200 status code %d", resp.StatusCode)
 	}
 	var inv types.Invoice
 	if err := json.NewDecoder(resp.Body).Decode(&inv); err != nil {
@@ -50,7 +50,7 @@ func (c *HTTPClient) GetInvoice(ctx context.Context, id int) (*types.Invoice, er
 	return &inv, nil
 }
 
-func (c *HTTPClient) Aggregate(ctx context.Context, aggReq *types.AggregateRequest) error {
+func (c *HTTPClient) Aggregate(ctx context.Context, aggReq *types.Distance) error {
 	b, err := json.Marshal(aggReq)
 	if err != nil {
 		return err
@@ -64,7 +64,7 @@ func (c *HTTPClient) Aggregate(ctx context.Context, aggReq *types.AggregateReque
 		return err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("the service responded with non 200 status code %d", resp.StatusCode)
+		return fmt.Errorf("the aggregation service responded with non 200 status code %d", resp.StatusCode)
 	}
 	resp.Body.Close()
 	return nil
