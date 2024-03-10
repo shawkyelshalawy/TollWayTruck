@@ -4,12 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"strconv"
 
 	"github.com/joho/godotenv"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/shawkyelshalawy/TollWayTruck/types"
+	"google.golang.org/grpc"
 )
 
 type APIError struct {
@@ -22,37 +25,41 @@ func main() {
 		log.Fatal(err)
 	}
 	var (
-		store = NewMemoryStore()
-		svc   = NewInvoiceAggregator(store)
-		//grpcListenAddr = os.Getenv("AGG_GRPC_ENDPOINT")
+		store          = NewMemoryStore()
+		svc            = NewInvoiceAggregator(store)
+		grpcListenAddr = os.Getenv("AGG_GRPC_ENDPOINT")
 		httpListenAddr = os.Getenv("AGG_HTTP_ENDPOINT")
 	)
+	svc = NewMetricsMiddleware(svc)
 	svc = NewLogMiddleware(svc)
-	makeHttpTransport(httpListenAddr, svc)
+	go func() {
+		log.Fatal(makeGRPCTransport(grpcListenAddr, svc))
+	}()
+	makeHTTPTransport(httpListenAddr, svc)
+}
+func makeGRPCTransport(listenAddr string, svc Aggregator) error {
+	fmt.Println("GRPC transport running on port ", listenAddr)
+	// Make a TCP listener
+	ln, err := net.Listen("tcp", listenAddr)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		fmt.Println("stopping GRPC transport")
+		ln.Close()
+	}()
+	//  a new GRPC native server with (options)
+	server := grpc.NewServer([]grpc.ServerOption{}...)
+	// Register GRPC server implementation to the GRPC package.
+	types.RegisterAggregatorServer(server, NewAggregatorGRPCServer(svc))
+	return server.Serve(ln)
 }
 
-// func makeGRPCTransport(listenAddr string, svc Aggregator) error {
-// 	fmt.Println("GRPC transport running on port ", listenAddr)
-// 	// Make a TCP listener
-// 	ln, err := net.Listen("tcp", listenAddr)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	defer func() {
-// 		fmt.Println("stopping GRPC transport")
-// 		ln.Close()
-// 	}()
-// 	// Make a new GRPC native server with (options)
-// 	server := grpc.NewServer([]grpc.ServerOption{}...)
-// 	// Register GRPC server implementation to the GRPC package.
-// 	types.RegisterAggregatorServer(server, NewAggregatorGRPCServer(svc))
-// 	return server.Serve(ln)
-// }
-
-func makeHttpTransport(listenAddr string, svc Aggregator) {
+func makeHTTPTransport(listenAddr string, svc Aggregator) {
 	fmt.Println("Starting HTTP transport on", listenAddr)
 	http.HandleFunc("/aggregate", handleAggregate(svc))
 	http.HandleFunc("/invoice", handleInvoice(svc))
+	http.Handle("/metrics", promhttp.Handler())
 	http.ListenAndServe(listenAddr, nil)
 
 }
