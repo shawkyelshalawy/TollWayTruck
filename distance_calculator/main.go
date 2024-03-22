@@ -14,6 +14,10 @@ func main() {
 	svc = NewCalculatorService()
 	svc = NewLogMiddleware(svc)
 	httpClient := client.NewHTTPClient(aggregatorEndpoint)
+	//  grpcClient, err := client.NewGRPCClient(aggregatorEndpoint)
+	//  if err != nil {
+	//  	log.Fatal(err)
+	// }
 	rcconsumer, err := NewRabbitConsumer(svc, httpClient)
 	if err != nil {
 		panic(err)

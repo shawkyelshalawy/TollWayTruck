@@ -19,6 +19,7 @@ type OBU struct {
 var sendInterval = time.Second * 40
 
 func genLatLong() (float64, float64) {
+
 	return genCoordinates(), genCoordinates()
 }
 
@@ -57,5 +58,5 @@ func main() {
 }
 
 func init() {
-	rand.Seed(time.Now().UnixNano())
+	rand.New(rand.NewSource(time.Now().UnixNano()))
 }
