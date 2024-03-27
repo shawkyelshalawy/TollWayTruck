@@ -1,0 +1,17 @@
+FROM golang:1.22-bullseye as builder
+
+WORKDIR $GOPATH/src/aggregator
+
+COPY . .
+
+RUN go mod download
+RUN go mod verify
+
+RUN go build -o bin/agg aggregator/main.go
+
+FROM gcr.io/distroless/static-debian11
+
+
+COPY --from=builder /go/src/aggregator/bin . 
+
+CMD ["agg"] 
