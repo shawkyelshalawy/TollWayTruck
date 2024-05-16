@@ -39,7 +39,7 @@ func main() {
 	}
 	recv := NewDataReceiver(client)
 	http.HandleFunc("/ws", recv.handleWS)
-	http.ListenAndServe(":30000", nil)
+	http.ListenAndServe(":3100", nil)
 }
 func NewDataReceiver(client rabbitmq.RabbitClient) *DataReceiver {
 	return &DataReceiver{

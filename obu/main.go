@@ -8,7 +8,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-const wsEndpoint = "ws://127.0.0.1:30000/ws"
+const wsEndpoint = "ws://127.0.0.1:3100/ws"
 
 type OBU struct {
 	OBUID int     `json:"obuID"`
